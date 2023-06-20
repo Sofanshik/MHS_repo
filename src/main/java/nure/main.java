@@ -1,13 +1,13 @@
 package nure;
 
-import com.backendless.Backendless;
-import com.backendless.BackendlessUser;
-import com.backendless.IDataStore;
+import com.backendless.*;
 import com.backendless.async.callback.AsyncCallback;
 import com.backendless.exceptions.BackendlessFault;
 import com.backendless.files.FileInfo;
 import com.backendless.persistence.DataQueryBuilder;
-//import com.backendless.files.BackendlessFilesApi;
+import com.backendless.exceptions.BackendlessException;
+import com.backendless.logging.*;
+import com.backendless.logging.Logger;
 
 import java.awt.*;
 import java.io.*;
@@ -49,7 +49,8 @@ public class main {
             System.out.println("7) Work with files! \n");
             System.out.println("8) Add your location! \n");
             System.out.println("9) Work with places! \n");
-            System.out.println("10) Exit! \n");
+            System.out.println("10) Friends \n");
+            System.out.println("11) Exit! \n");
 
             boolean while_per = true;
             String choise = in.nextLine();
@@ -106,7 +107,14 @@ public class main {
                     String email = choise;
                     System.out.println("Enter your password: ");
                     choise = in.nextLine();
-                    Backendless.UserService.login(email, choise);
+                    try {
+                        Backendless.UserService.login(email, choise);
+                        System.out.println("Login successful!");
+                    } catch (BackendlessException e) {
+                        System.out.println("Login failed. Error: " + e.getMessage());
+                        Logger logger = Logger.getLogger("LOGinN");
+                        logger.error("Login failed: " + e.getMessage());
+                    }
                     break;
 
                 case ("3"):
@@ -230,8 +238,14 @@ public class main {
                             case ("1"):
                                 System.out.print("Enter pass to file, that you want to upload: ");
                                 String upload_file_pass = in.nextLine();
-                                File upload_file = new File(upload_file_pass);
-                                Backendless.Files.upload(upload_file, "/shared with me/" + Backendless.UserService.CurrentUser().getEmail(),true);
+                                try {
+                                    File upload_file = new File(upload_file_pass);
+                                    Backendless.Files.upload(upload_file, "/shared with me/" + Backendless.UserService.CurrentUser().getEmail(), true);
+                                }
+                                catch (BackendlessException e ){
+                                    Logger logger = Logger.getLogger("Upload File!");
+                                    logger.error("Upload file failed: " + e.getMessage() + "| User: " + Backendless.UserService.CurrentUser().getEmail());
+                                }
                                 break;
 
                             case ("2"):
@@ -358,7 +372,7 @@ public class main {
                                     System.out.println("Additional avatar! \n");
                                     System.out.print("Enter pass to file, that you want to upload as avatar: ");
                                     upload_file_pass = in.nextLine();
-                                    upload_file = new File(upload_file_pass);
+                                    File upload_file = new File(upload_file_pass);
                                     Backendless.Files.upload(upload_file, "/shared with me/" + Backendless.UserService.CurrentUser().getEmail() + "/avatar/",true);
                                     Backendless.UserService.CurrentUser().setProperty("avatar", "https://backendlessappcontent.com/DA1D7B8D-FE14-688E-FF99-4251CF311100/66A38710-5B4A-4705-B1C5-58624ACB92A4/files/shared+with+me/" + Backendless.UserService.CurrentUser().getEmail() + "/avatar/" + upload_file.getName());
                                     Backendless.UserService.update(Backendless.UserService.CurrentUser());
@@ -423,9 +437,13 @@ public class main {
                                     String wkt = point.toText();
 
                                     //System.out.println("Current user coordinates in WKT format: " + wkt);
-
-                                    Backendless.UserService.CurrentUser().setProperty("my_location", wkt);
-                                    Backendless.UserService.update(Backendless.UserService.CurrentUser());
+                                    try {
+                                        Backendless.UserService.CurrentUser().setProperty("my_location", wkt);
+                                        Backendless.UserService.update(Backendless.UserService.CurrentUser());
+                                    }catch (BackendlessException e){
+                                        Logger logger = Logger.getLogger("Set user location!");
+                                        logger.error("Set user location failed: " + e.getMessage() + "| User: " + Backendless.UserService.CurrentUser().getEmail());
+                                    }
 
                                 } catch (IOException e) {
                                     e.printStackTrace();
@@ -536,8 +554,49 @@ public class main {
                     }else {
                         System.out.print("You aren't login! \n");
                     }
+                    break;
 
                 case ("10"):
+                    if (Backendless.UserService.CurrentUser() != null){
+                        while(while_per){
+
+                            System.out.println("\n>>>>>>>>>>>>>>>>>> Friends: <<<<<<<<<<<<<<<<<<\n");
+                            System.out.println("1) Add! \n");
+                            System.out.println("2) Delete! \n");
+                            System.out.println("3) Search! \n");
+                            System.out.println("4) Exit! \n");
+                            choise = in.nextLine();
+
+                            switch (choise){
+
+                                case ("1"):
+                                    System.out.println("Enter email of your friends! \n");
+                                    String email_friend = in.nextLine();
+
+                                    break;
+
+                                case ("2"):
+                                    System.out.println("Enter email of your friends which you want to delete! \n");
+                                    email_friend = in.nextLine();
+
+                                case ("3"):
+                                    System.out.println("Enter email of your friends which you want to search! \n");
+                                    email_friend = in.nextLine();
+
+                                case ("4"):
+                                    while_per = false;
+                                    break;
+
+                                default:
+                                    break;
+                            }
+                        }
+                    }
+                    else{
+                        System.out.print("You aren't login! \n");
+                    }
+
+                case ("11"):
                     System.exit(0);
                     break;
 
@@ -581,7 +640,6 @@ public class main {
 //        var Json = gson.toJson(map);
 //        return gson.fromJson(Json, Place.class);
 //    }
-
 
 }
 
